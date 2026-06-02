@@ -13,9 +13,10 @@ consumed as **TypeScript source** (the bots run it through `tsx` like their own
 code, and `tsc` resolves it via `moduleResolution: bundler`) — there is **no
 build step** and no `dist/`.
 
-It is seeded from the plumbing the `zaaduna` and `aamin` bots share, for future
-bots of this type; it is **not yet used by any bot** (those two stay standalone
-for now). Do not add bot-specific content, config, or domain data here.
+It was seeded from the plumbing the `zaaduna` and `aamin` bots share, and both
+now **consume it** (pinned by tag, auto-bumped by Renovate); any future bot of
+this type adopts it the same way. Do not add bot-specific content, config, or
+domain data here — that stays in each bot.
 
 ## Rules
 

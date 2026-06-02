@@ -5,10 +5,10 @@ scheduled content (reminders, azkar, polls) to a channel or group on a cron sche
 per-user state and no database**. It exists so a fix to this plumbing can land in every such bot
 from one place, instead of drifting between byte-identical copies.
 
-> **Not yet used by any bot.** It is seeded from the plumbing the [zaaduna] and [aamin] bots share,
-> for **future** bots of this type. zaaduna and aamin are intentionally left **standalone** for now
-> — nothing here is wired into them yet. Adopt it in a new bot first; migrating the existing two is
-> a later, deliberate step.
+> **Consumed by [zaaduna] and [aamin].** Both pin it (`#v0.1.0`) and take their logger, env, bidi,
+> pick, JSON-pointer state, post/poll/delete, cron `Scheduler`, and `/health` server from here, keeping
+> only their own schedule table, content, and ring-buffer dispatch. Renovate opens a bump PR in each
+> when a new tag ships. Any future bot of this type adopts it the same way.
 
 [zaaduna]: https://github.com/edriso/zaaduna
 [aamin]: https://github.com/edriso/aamin
@@ -53,7 +53,7 @@ source** too — `exports` points at `src/index.ts`, and the consuming bot's `ts
 A bot depends on a pinned tag:
 
 ```jsonc
-// a future poster bot's package.json
+// a poster bot's package.json (e.g. zaaduna / aamin)
 "dependencies": {
   "telegram-broadcast-kit": "github:edriso/telegram-broadcast-kit#v0.1.0"
 }
