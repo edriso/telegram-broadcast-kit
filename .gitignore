@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output (this package ships TypeScript source; there is no build)
+dist/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
