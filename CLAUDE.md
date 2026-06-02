@@ -13,10 +13,12 @@ consumed as **TypeScript source** (the bots run it through `tsx` like their own
 code, and `tsc` resolves it via `moduleResolution: bundler`) — there is **no
 build step** and no `dist/`.
 
-It was seeded from the plumbing the `zaaduna` and `aamin` bots share, and both
-now **consume it** (pinned by tag, auto-bumped by Renovate); any future bot of
-this type adopts it the same way. Do not add bot-specific content, config, or
-domain data here — that stays in each bot.
+It was seeded from the plumbing the `zaaduna` and `aamin` bots share; all four
+scheduled channel-poster bots — those two plus `fluent-owls` and `numninjas`
+(the two quiz bots, which use the kit's quiz-poll mode) — now **consume it**
+(pinned by tag, auto-bumped by Renovate). Any future bot of this type adopts it
+the same way. Do not add bot-specific content, config, or domain data here —
+that stays in each bot.
 
 ## Rules
 

@@ -5,13 +5,16 @@ scheduled content (reminders, azkar, polls) to a channel or group on a cron sche
 per-user state and no database**. It exists so a fix to this plumbing can land in every such bot
 from one place, instead of drifting between byte-identical copies.
 
-> **Consumed by [zaaduna] and [aamin].** Both pin it (`#v0.1.0`) and take their logger, env, bidi,
-> pick, JSON-pointer state, post/poll/delete, cron `Scheduler`, and `/health` server from here, keeping
-> only their own schedule table, content, and ring-buffer dispatch. Renovate opens a bump PR in each
-> when a new tag ships. Any future bot of this type adopts it the same way.
+> **Consumed by [zaaduna], [aamin], [fluent-owls], and [numninjas]** — four scheduled
+> channel-poster bots. Each pins a tag and takes its logger, env, bidi, pick, JSON-pointer state,
+> post/poll/delete, cron `Scheduler`, and `/health` server from here, keeping only its own schedule
+> table, content, and dispatch. The two quiz bots (fluent-owls, numninjas) use the kit's quiz-poll
+> mode. Renovate opens a bump PR in each when a new tag ships, so a fix here reaches every bot.
 
 [zaaduna]: https://github.com/edriso/zaaduna
 [aamin]: https://github.com/edriso/aamin
+[fluent-owls]: https://github.com/edriso/fluent-owls
+[numninjas]: https://github.com/edriso/numninjas
 
 ## What's in it
 
@@ -60,9 +63,9 @@ source** too — `exports` points at `src/index.ts`, and the consuming bot's `ts
 A bot depends on a pinned tag:
 
 ```jsonc
-// a poster bot's package.json (e.g. zaaduna / aamin)
+// a poster bot's package.json (e.g. zaaduna / numninjas)
 "dependencies": {
-  "telegram-broadcast-kit": "github:edriso/telegram-broadcast-kit#v0.1.0"
+  "telegram-broadcast-kit": "github:edriso/telegram-broadcast-kit#v0.2.1"
 }
 ```
 
