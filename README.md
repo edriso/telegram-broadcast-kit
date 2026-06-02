@@ -15,16 +15,16 @@ from one place, instead of drifting between byte-identical copies.
 
 ## What's in it
 
-| Module      | Exports                                                                                 |
-| ----------- | --------------------------------------------------------------------------------------- |
-| `logger`    | `logger` (timestamped JSON-ish console logger)                                          |
-| `env`       | `loadEnv` (finds the consuming bot's root `.env`)                                       |
-| `bidi`      | `rtlIsolate`, `ltrIsolate`, `autoIsolate` (Unicode bidi isolates for plain-text RTL)    |
-| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn` (content rotation: random or daily-rotating) |
-| `state`     | `initState`, `getMessageIds`, `setMessageIds`, `getLastMessageId`, `setLastMessageId`   |
-| `post`      | `post`, `deleteMessage`, `sendPoll`, `PollSpec`, `ChatId`, `MIN/MAX_CLOSE_HOURS`        |
-| `scheduler` | `runJob`, `Scheduler`, `Job`, `CronJob` (cron error containment + a tiny task registry) |
-| `health`    | `startHealthServer`, `resolvePort` (a minimal `/health` HTTP server)                    |
+| Module      | Exports                                                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logger`    | `logger` (timestamped JSON-ish console logger)                                                                                                  |
+| `env`       | `loadEnv` (finds the consuming bot's root `.env`)                                                                                               |
+| `bidi`      | `rtlIsolate`, `ltrIsolate`, `autoIsolate` (Unicode bidi isolates for plain-text RTL)                                                            |
+| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn` (content rotation: random or daily-rotating)                                                         |
+| `state`     | `initState`, `getMessageIds`, `setMessageIds`, `getLastMessageId`, `setLastMessageId`                                                           |
+| `post`      | `post` (opt-in `parseMode`), `deleteMessage`, `sendPoll` (regular + quiz), `PollSpec`, `ChatId`, `MIN/MAX_CLOSE_HOURS`, `MAX_EXPLANATION_CHARS` |
+| `scheduler` | `runJob`, `Scheduler`, `Job`, `CronJob` (cron error containment + a tiny task registry)                                                         |
+| `health`    | `startHealthServer`, `resolvePort` (a minimal `/health` HTTP server)                                                                            |
 
 Everything is pure except `env` (reads a `.env`), `logger` (writes the console), `state` (reads/writes
 a small JSON file), `post` (calls grammY), `scheduler` (calls node-cron), and `health` (binds a port).
@@ -32,10 +32,17 @@ a small JSON file), `post` (calls grammY), `scheduler` (calls node-cron), and `h
 
 ### Design notes
 
-- **Plain text, no parse_mode.** `post`/`sendPoll` never set a parse_mode: Arabic du'a/Quran
-  punctuation contains characters Markdown/HTML parsing would reject with a 400. The bidi isolates
-  in `bidi.ts` are how a plain-text RTL line stays right-to-left and walls itself off from the vote
-  %/count Telegram appends to poll options.
+- **Plain text by default, parse_mode is opt-in.** `post`/`sendPoll` set no parse_mode unless asked:
+  Arabic du'a/Quran punctuation contains characters Markdown/HTML parsing would reject with a 400.
+  The bidi isolates in `bidi.ts` are how a plain-text RTL line stays right-to-left and walls itself
+  off from the vote %/count Telegram appends to poll options. A bot whose text is safe (and escaped
+  to that mode's rules) can pass `post(..., { parseMode: 'HTML' })` to opt in; Arabic content bots
+  keep it off. `sendPoll` stays plain-text either way (no `explanation_parse_mode`).
+- **Regular and quiz polls.** `sendPoll`'s `PollSpec` defaults to an anonymous `'regular'` poll
+  (unchanged). Set `type: 'quiz'` with a 0-based `correctOptionId` (and an optional `explanation`,
+  ≤200 chars, shown on a wrong answer) for a quiz. A quiz is always single-answer, so the kit forces
+  `allows_multiple_answers:false` for it. Bad quiz config (missing/out-of-range `correctOptionId`,
+  over-long `explanation`) throws synchronously before the network call, not an opaque Telegram 400.
 - **The state file is not a database.** It is one small JSON file (atomic tmp-file + rename), the
   same weight as `.env`. It holds the message ids a ring-buffer scheduler keeps live, so
   replace-on-next-fire survives a restart. Lose it and a job just leaks a few stale messages.

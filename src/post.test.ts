@@ -67,6 +67,25 @@ describe('post', () => {
     expect(args[2]).toEqual({ disable_notification: true });
     expect(args[2].parse_mode).toBeUndefined();
   });
+
+  it('passes parse_mode through when opts.parseMode is set', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 8 });
+    const bot = fakeBot({ sendMessage });
+    await post(bot, CHAT, '<b>hi</b>', { parseMode: 'HTML' });
+    const args = sendMessage.mock.calls[0];
+    expect(args.length).toBe(3); // (chat_id, text, other)
+    expect(args[2]).toEqual({ parse_mode: 'HTML' });
+  });
+
+  it('combines parseMode and silent into one options object', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 9 });
+    const bot = fakeBot({ sendMessage });
+    await post(bot, CHAT, '*hi*', { parseMode: 'MarkdownV2', silent: true });
+    expect(sendMessage.mock.calls[0][2]).toEqual({
+      disable_notification: true,
+      parse_mode: 'MarkdownV2',
+    });
+  });
 });
 
 describe('deleteMessage', () => {
@@ -174,5 +193,94 @@ describe('sendPoll', () => {
     const poll = vi.fn().mockRejectedValue(new Error('429 too many requests'));
     const bot = fakeBot({ sendPoll: poll });
     await expect(sendPoll(bot, CHAT, base)).resolves.toBeNull();
+  });
+
+  it('does NOT leak any quiz field into a regular poll request', async () => {
+    const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+    const bot = fakeBot({ sendPoll: poll });
+    await sendPoll(bot, CHAT, base);
+    const other = poll.mock.calls[0][3];
+    expect(other.type).toBeUndefined();
+    expect(other.correct_option_id).toBeUndefined();
+    expect(other.explanation).toBeUndefined();
+  });
+
+  describe('quiz', () => {
+    const quiz: PollSpec = {
+      question: 'كم عدد أركان الإسلام؟',
+      options: ['ثلاثة', 'أربعة', 'خمسة'],
+      type: 'quiz',
+      correctOptionId: 2,
+      explanation: 'أركان الإسلام خمسة.',
+    };
+
+    it('sends type:quiz with correct_option_id and explanation', async () => {
+      const poll = vi.fn().mockResolvedValue({ message_id: 11 });
+      const bot = fakeBot({ sendPoll: poll });
+      const id = await sendPoll(bot, CHAT, quiz, { name: 'q' });
+      expect(id).toBe(11);
+      const other = poll.mock.calls[0][3];
+      expect(other.type).toBe('quiz');
+      expect(other.correct_option_id).toBe(2);
+      expect(other.explanation).toBe('أركان الإسلام خمسة.');
+    });
+
+    it('forces allows_multiple_answers:false for a quiz even if asked otherwise', async () => {
+      const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+      const bot = fakeBot({ sendPoll: poll });
+      await sendPoll(bot, CHAT, { ...quiz, allowsMultipleAnswers: true });
+      expect(poll.mock.calls[0][3].allows_multiple_answers).toBe(false);
+    });
+
+    it('still sends plain text (no explanation_parse_mode)', async () => {
+      const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+      const bot = fakeBot({ sendPoll: poll });
+      await sendPoll(bot, CHAT, quiz);
+      expect(poll.mock.calls[0][3].explanation_parse_mode).toBeUndefined();
+      expect(poll.mock.calls[0][3].parse_mode).toBeUndefined();
+    });
+
+    it('omits explanation when none is given', async () => {
+      const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+      const bot = fakeBot({ sendPoll: poll });
+      const { explanation: _drop, ...noExplanation } = quiz;
+      await sendPoll(bot, CHAT, noExplanation);
+      expect('explanation' in poll.mock.calls[0][3]).toBe(false);
+    });
+
+    it('throws (before any network call) when correctOptionId is missing', async () => {
+      const poll = vi.fn();
+      const bot = fakeBot({ sendPoll: poll });
+      const { correctOptionId: _drop, ...noCorrect } = quiz;
+      await expect(sendPoll(bot, CHAT, noCorrect)).rejects.toThrow(/correctOptionId/);
+      expect(poll).not.toHaveBeenCalled();
+    });
+
+    it('throws when correctOptionId is out of range', async () => {
+      const poll = vi.fn();
+      const bot = fakeBot({ sendPoll: poll });
+      await expect(sendPoll(bot, CHAT, { ...quiz, correctOptionId: 3 })).rejects.toThrow(
+        /correctOptionId/,
+      );
+      expect(poll).not.toHaveBeenCalled();
+    });
+
+    it('throws when correctOptionId is not an integer', async () => {
+      const poll = vi.fn();
+      const bot = fakeBot({ sendPoll: poll });
+      await expect(sendPoll(bot, CHAT, { ...quiz, correctOptionId: 1.5 })).rejects.toThrow(
+        /correctOptionId/,
+      );
+      expect(poll).not.toHaveBeenCalled();
+    });
+
+    it('throws when the explanation is over 200 chars (no silent truncation)', async () => {
+      const poll = vi.fn();
+      const bot = fakeBot({ sendPoll: poll });
+      await expect(sendPoll(bot, CHAT, { ...quiz, explanation: 'ا'.repeat(201) })).rejects.toThrow(
+        /200/,
+      );
+      expect(poll).not.toHaveBeenCalled();
+    });
   });
 });

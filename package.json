@@ -1,6 +1,6 @@
 {
   "name": "telegram-broadcast-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "license": "0BSD",
   "description": "Shared kernel for scheduled Telegram channel-poster bots (rotating reminders, azkar, polls posted to a channel/group on a cron schedule, no per-user state and no database): the console logger, RTL bidi isolates, the plain-text poster, atomic JSON pointer state, content-rotation pickers, the cron error-containment wrapper, the tiny /health server, and the root .env loader. Consumed as TypeScript source (the bots run it through tsx, like their own code).",
