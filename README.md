@@ -15,16 +15,16 @@ from one place, instead of drifting between byte-identical copies.
 
 ## What's in it
 
-| Module      | Exports                                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logger`    | `logger` (timestamped JSON-ish console logger)                                                                                                  |
-| `env`       | `loadEnv` (finds the consuming bot's root `.env`)                                                                                               |
-| `bidi`      | `rtlIsolate`, `ltrIsolate`, `autoIsolate` (Unicode bidi isolates for plain-text RTL)                                                            |
-| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn` (content rotation: random or daily-rotating)                                                         |
-| `state`     | `initState`, `getMessageIds`, `setMessageIds`, `getLastMessageId`, `setLastMessageId`                                                           |
-| `post`      | `post` (opt-in `parseMode`), `deleteMessage`, `sendPoll` (regular + quiz), `PollSpec`, `ChatId`, `MIN/MAX_CLOSE_HOURS`, `MAX_EXPLANATION_CHARS` |
-| `scheduler` | `runJob`, `Scheduler`, `Job`, `CronJob` (cron error containment + a tiny task registry)                                                         |
-| `health`    | `startHealthServer`, `resolvePort` (a minimal `/health` HTTP server)                                                                            |
+| Module      | Exports                                                                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logger`    | `logger` (timestamped JSON-ish console logger)                                                                                                                                    |
+| `env`       | `loadEnv` (finds the consuming bot's root `.env`)                                                                                                                                 |
+| `bidi`      | `rtlIsolate`, `ltrIsolate`, `autoIsolate` (Unicode bidi isolates for plain-text RTL)                                                                                              |
+| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn` (content rotation: random or daily-rotating)                                                                                           |
+| `state`     | `initState`, `getMessageIds`, `setMessageIds`, `getLastMessageId`, `setLastMessageId`                                                                                             |
+| `post`      | `post` (opt-in `parseMode`, reply threading), `deleteMessage`, `sendPoll` (regular + quiz, reply threading), `PollSpec`, `ChatId`, `MIN/MAX_CLOSE_HOURS`, `MAX_EXPLANATION_CHARS` |
+| `scheduler` | `runJob`, `Scheduler`, `Job`, `CronJob` (cron error containment + a tiny task registry)                                                                                           |
+| `health`    | `startHealthServer`, `resolvePort` (a minimal `/health` HTTP server)                                                                                                              |
 
 Everything is pure except `env` (reads a `.env`), `logger` (writes the console), `state` (reads/writes
 a small JSON file), `post` (calls grammY), `scheduler` (calls node-cron), and `health` (binds a port).

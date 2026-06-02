@@ -18,6 +18,10 @@ export interface PostOptions {
    *  CALLER is responsible for escaping the text to that mode's rules; Arabic
    *  du'a/Quran bots must keep it off (the punctuation would 400 a parse). */
   parseMode?: 'HTML' | 'MarkdownV2' | 'Markdown';
+  /** Post this message/poll as a reply to an earlier message in the same chat
+   *  (its message_id). Used to thread a poll under the context message it
+   *  belongs to. Omitted by default (a standalone post). */
+  replyToMessageId?: number;
 }
 
 /**
@@ -39,9 +43,14 @@ export async function post(
     // Build the "other" options only from the fields the caller actually set,
     // so the common (audible, plain-text) path stays a bare (chat_id, text)
     // call with no parse_mode — unchanged from before parseMode existed.
-    const other: { disable_notification?: boolean; parse_mode?: PostOptions['parseMode'] } = {};
+    const other: {
+      disable_notification?: boolean;
+      parse_mode?: PostOptions['parseMode'];
+      reply_parameters?: { message_id: number };
+    } = {};
     if (opts.silent) other.disable_notification = true;
     if (opts.parseMode) other.parse_mode = opts.parseMode;
+    if (opts.replyToMessageId) other.reply_parameters = { message_id: opts.replyToMessageId };
     const message =
       Object.keys(other).length > 0
         ? await bot.api.sendMessage(chatId, text, other)
@@ -200,6 +209,7 @@ export async function sendPoll(
     type?: 'quiz';
     correct_option_id?: number;
     explanation?: string;
+    reply_parameters?: { message_id: number };
   } = {
     is_anonymous: isAnonymous,
     allows_multiple_answers: allowsMultiple,
@@ -211,6 +221,9 @@ export async function sendPoll(
     other.correct_option_id = spec.correctOptionId;
     if (spec.explanation !== undefined) other.explanation = spec.explanation;
   }
+  // Thread the poll under an earlier message (e.g. the context message it
+  // answers) when the caller asks; a standalone poll otherwise.
+  if (opts.replyToMessageId) other.reply_parameters = { message_id: opts.replyToMessageId };
 
   try {
     const message = await bot.api.sendPoll(chatId, rtlIsolate(spec.question), options, other);

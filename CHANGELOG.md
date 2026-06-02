@@ -4,6 +4,14 @@ Notable changes to telegram-broadcast-kit. A consuming bot pins a tag, e.g.
 `github:edriso/telegram-broadcast-kit#v0.1.0`, so each entry below is a tag a bot
 can move to.
 
+## v0.2.1
+
+- **Reply threading on `post` and `sendPoll`.** New optional
+  `replyToMessageId?: number` on the post options sends the message/poll as a
+  reply to an earlier message in the same chat (Bot API `reply_parameters`).
+  Used to thread an answer poll under the context message it belongs to.
+  Omitted by default (a standalone post), so existing callers are unaffected.
+
 ## v0.2.0
 
 Two backward-compatible additions to the `post` module so the quiz-poster bots

@@ -86,6 +86,13 @@ describe('post', () => {
       parse_mode: 'MarkdownV2',
     });
   });
+
+  it('threads as a reply when replyToMessageId is set (none by default)', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 10 });
+    const bot = fakeBot({ sendMessage });
+    await post(bot, CHAT, 'context', { replyToMessageId: 77 });
+    expect(sendMessage.mock.calls[0][2]).toEqual({ reply_parameters: { message_id: 77 } });
+  });
 });
 
 describe('deleteMessage', () => {
@@ -203,6 +210,16 @@ describe('sendPoll', () => {
     expect(other.type).toBeUndefined();
     expect(other.correct_option_id).toBeUndefined();
     expect(other.explanation).toBeUndefined();
+  });
+
+  it('threads under an earlier message when replyToMessageId is set; standalone otherwise', async () => {
+    const threaded = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendPoll(fakeBot({ sendPoll: threaded }), CHAT, base, { replyToMessageId: 77 });
+    expect(threaded.mock.calls[0][3].reply_parameters).toEqual({ message_id: 77 });
+
+    const standalone = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendPoll(fakeBot({ sendPoll: standalone }), CHAT, base);
+    expect(standalone.mock.calls[0][3].reply_parameters).toBeUndefined();
   });
 
   describe('quiz', () => {
