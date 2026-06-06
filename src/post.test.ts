@@ -8,7 +8,7 @@ import {
   MAX_CLOSE_HOURS,
   type PollSpec,
 } from './post';
-import { rtlIsolate } from './bidi';
+import { autoIsolate, ltrIsolate, rtlIsolate } from './bidi';
 
 /**
  * No network. We pass a fake bot whose `api` is spied, and assert what we send
@@ -140,6 +140,35 @@ describe('sendPoll', () => {
     ]);
     expect(other.is_anonymous).toBe(true);
     expect(other.allows_multiple_answers).toBe(true);
+  });
+
+  it('defaults to an RTL isolate when direction is omitted', async () => {
+    const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendPoll(fakeBot({ sendPoll: poll }), CHAT, base);
+    const [, question, options] = poll.mock.calls[0];
+    expect(question).toBe(rtlIsolate(base.question));
+    expect(options[0]).toEqual({ text: rtlIsolate(base.options[0]) });
+  });
+
+  it("wraps the question and every option in an LTR isolate when direction is 'ltr'", async () => {
+    const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+    const ltr: PollSpec = {
+      question: 'Which answer is correct?',
+      options: ['1 sweet', '2 sweets', '3 sweets'],
+      direction: 'ltr',
+    };
+    await sendPoll(fakeBot({ sendPoll: poll }), CHAT, ltr);
+    const [, question, options] = poll.mock.calls[0];
+    expect(question).toBe(ltrIsolate(ltr.question));
+    expect(options).toEqual(ltr.options.map((t) => ({ text: ltrIsolate(t) })));
+  });
+
+  it("infers direction per string with a first-strong isolate when direction is 'auto'", async () => {
+    const poll = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendPoll(fakeBot({ sendPoll: poll }), CHAT, { ...base, direction: 'auto' });
+    const [, question, options] = poll.mock.calls[0];
+    expect(question).toBe(autoIsolate(base.question));
+    expect(options[0]).toEqual({ text: autoIsolate(base.options[0]) });
   });
 
   it('sends the poll with NO parse_mode (the reason bidi isolates exist)', async () => {

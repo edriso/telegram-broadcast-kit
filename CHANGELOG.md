@@ -4,6 +4,18 @@ Notable changes to telegram-broadcast-kit. A consuming bot pins a tag, e.g.
 `github:edriso/telegram-broadcast-kit#v0.1.0`, so each entry below is a tag a bot
 can move to.
 
+## v0.2.2
+
+- **Poll text direction is selectable.** New optional `direction?: 'rtl' |
+'ltr' | 'auto'` on `PollSpec`. `sendPoll` wraps the question and every option
+  in a bidi isolate of that direction. It defaults to `'rtl'` (unchanged from
+  before — Arabic callers like zaaduna/aamin send the same request as in
+  v0.2.1), `'ltr'` is for Latin-script content (e.g. an English math quiz, where
+  a number-first option like "1 sweet" was mirroring to "sweet 1" for
+  RTL-locale readers), and `'auto'` infers the direction of each string from its
+  first strong character (mixed or user-supplied text). No change for callers
+  that omit it.
+
 ## v0.2.1
 
 - **Reply threading on `post` and `sendPoll`.** New optional

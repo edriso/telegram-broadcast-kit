@@ -1,6 +1,6 @@
 import type { Bot, Context } from 'grammy';
 import { logger } from './logger';
-import { rtlIsolate } from './bidi';
+import { autoIsolate, ltrIsolate, rtlIsolate } from './bidi';
 
 /** A Telegram chat id: the numeric "-100…" id (survives a username rename) or
  *  an "@channel" handle. Passed as-is to the Bot API. */
@@ -131,6 +131,15 @@ export interface PollSpec {
   /** Quiz only, optional: text shown when a voter picks a wrong answer.
    *  Telegram limit 0–200 chars with ≤2 line breaks. Maps to `explanation`. */
   explanation?: string;
+  /** Text direction for the bidi isolate wrapped around the question and every
+   *  option. A poll is sent as plain text with no parse_mode, so its base
+   *  direction would otherwise be decided by the client/locale, not the text —
+   *  which mirrors Latin polls for RTL-locale readers (e.g. "1 sweet" renders
+   *  "sweet 1"). The isolate pins it. Defaults to `'rtl'` (this kit's Arabic
+   *  origin); pass `'ltr'` for Latin-script content, or `'auto'` to infer the
+   *  direction of each string from its first strong character (good for mixed
+   *  or user-supplied text). See bidi.ts. */
+  direction?: 'rtl' | 'ltr' | 'auto';
 }
 
 /** Telegram's hard cap on a quiz explanation. */
@@ -147,8 +156,12 @@ export const MAX_EXPLANATION_CHARS = 200;
  *   so we force allows_multiple_answers:false regardless of the spec.
  *
  * The question and every option are bidi-isolated so the vote %/count Telegram
- * appends does not render over a leading emoji (see bidi.ts; keep emoji at the
- * END of each string). Like `post`, the poll stays plain-text (no
+ * appends does not render over a leading emoji, and so the text does not mirror
+ * for a reader whose client base direction differs from the content (see
+ * bidi.ts; keep emoji at the END of each string). The isolate direction follows
+ * `spec.direction` — `'rtl'` by default (Arabic content), `'ltr'` for
+ * Latin-script content, `'auto'` to infer per string. Like `post`, the poll
+ * stays plain-text (no
  * explanation_parse_mode). close_date is clamped to Telegram's accepted range
  * so bad config can't 400 the API. Quiz config is validated synchronously and
  * THROWS on bad input (a programming error, surfaced loudly — unlike a network
@@ -196,8 +209,11 @@ export async function sendPoll(
   const closeDate = Math.floor(Date.now() / 1000) + Math.round(clampedHours * 3600);
 
   // Bot API 7.3+ wants InputPollOption objects, not strings. Each option and
-  // the question is bidi-isolated (see rtlIsolate).
-  const options = spec.options.map((text) => ({ text: rtlIsolate(text) }));
+  // the question is bidi-isolated in the requested direction (default RTL; see
+  // bidi.ts and spec.direction).
+  const isolate =
+    spec.direction === 'ltr' ? ltrIsolate : spec.direction === 'auto' ? autoIsolate : rtlIsolate;
+  const options = spec.options.map((text) => ({ text: isolate(text) }));
 
   // Start from the exact regular-poll request shape (unchanged for non-quiz
   // callers), then layer the quiz fields on only for a quiz.
@@ -226,7 +242,7 @@ export async function sendPoll(
   if (opts.replyToMessageId) other.reply_parameters = { message_id: opts.replyToMessageId };
 
   try {
-    const message = await bot.api.sendPoll(chatId, rtlIsolate(spec.question), options, other);
+    const message = await bot.api.sendPoll(chatId, isolate(spec.question), options, other);
     logger.info('Posted poll to channel', {
       name: opts.name,
       messageId: message.message_id,

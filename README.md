@@ -46,6 +46,8 @@ a small JSON file), `post` (calls grammY), `scheduler` (calls node-cron), and `h
   ≤200 chars, shown on a wrong answer) for a quiz. A quiz is always single-answer, so the kit forces
   `allows_multiple_answers:false` for it. Bad quiz config (missing/out-of-range `correctOptionId`,
   over-long `explanation`) throws synchronously before the network call, not an opaque Telegram 400.
+  Set `direction: 'ltr'` (or `'auto'`) on the `PollSpec` for Latin-script polls; it defaults to
+  `'rtl'`, so a Latin option like "1 sweet" would otherwise mirror to "sweet 1" for an RTL reader.
 - **The state file is not a database.** It is one small JSON file (atomic tmp-file + rename), the
   same weight as `.env`. It holds the message ids a ring-buffer scheduler keeps live, so
   replace-on-next-fire survives a restart. Lose it and a job just leaks a few stale messages.
