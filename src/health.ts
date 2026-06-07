@@ -50,6 +50,9 @@ export function startHealthServer(opts: HealthServerOptions = {}): void {
     );
   });
 
+  // Bind failures (e.g. the port is already in use) surface on the 'error'
+  // event, not as a synchronous throw from listen(), so this handler is what
+  // keeps the bot alive when the health server can't start.
   server.on('error', (err) => {
     logger.warn('Health server failed to bind, continuing without it', {
       port,
@@ -57,15 +60,7 @@ export function startHealthServer(opts: HealthServerOptions = {}): void {
     });
   });
 
-  try {
-    server.listen(port, () => {
-      logger.info('Health server listening', { port });
-    });
-  } catch (err) {
-    // The bot must keep running even if the health server can't start.
-    logger.warn('Health server could not start, continuing without it', {
-      port,
-      error: String(err),
-    });
-  }
+  server.listen(port, () => {
+    logger.info('Health server listening', { port });
+  });
 }

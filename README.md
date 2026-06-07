@@ -23,7 +23,7 @@ from one place, instead of drifting between byte-identical copies.
 | `logger`    | `logger` (timestamped JSON-ish console logger)                                                                                                                                    |
 | `env`       | `loadEnv` (finds the consuming bot's root `.env`)                                                                                                                                 |
 | `bidi`      | `rtlIsolate`, `ltrIsolate`, `autoIsolate` (Unicode bidi isolates for plain-text RTL)                                                                                              |
-| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn` (content rotation: random or daily-rotating)                                                                                           |
+| `pick`      | `pickContent`, `pickForDay`, `dayOfYearIn`, `dayNumberIn` (content rotation: random or daily-rotating; tz-aware date helpers)                                                     |
 | `state`     | `initState`, `getMessageIds`, `setMessageIds`, `getLastMessageId`, `setLastMessageId`                                                                                             |
 | `post`      | `post` (opt-in `parseMode`, reply threading), `deleteMessage`, `sendPoll` (regular + quiz, reply threading), `PollSpec`, `ChatId`, `MIN/MAX_CLOSE_HOURS`, `MAX_EXPLANATION_CHARS` |
 | `scheduler` | `runJob`, `Scheduler`, `Job`, `CronJob` (cron error containment + a tiny task registry)                                                                                           |
@@ -67,7 +67,7 @@ A bot depends on a pinned tag:
 ```jsonc
 // a poster bot's package.json (e.g. zaaduna / numninjas)
 "dependencies": {
-  "telegram-broadcast-kit": "github:edriso/telegram-broadcast-kit#v0.2.1"
+  "telegram-broadcast-kit": "github:edriso/telegram-broadcast-kit#v0.2.3"
 }
 ```
 

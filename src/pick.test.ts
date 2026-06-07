@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickContent, pickForDay, dayOfYearIn } from './pick';
+import { pickContent, pickForDay, dayOfYearIn, dayNumberIn } from './pick';
 
 describe('pickContent', () => {
   it('returns the string as-is when input is a non-empty string', () => {
@@ -70,6 +70,34 @@ describe('dayOfYearIn', () => {
     const instant = new Date('2026-01-01T23:30:00Z');
     expect(dayOfYearIn(instant, 'UTC')).toBe(1);
     expect(dayOfYearIn(instant, 'Africa/Cairo')).toBe(2);
+  });
+});
+
+describe('dayNumberIn', () => {
+  it('increments by exactly 1 each calendar day', () => {
+    const d1 = dayNumberIn(new Date('2026-03-03T12:00:00Z'), 'UTC');
+    const d2 = dayNumberIn(new Date('2026-03-04T12:00:00Z'), 'UTC');
+    expect(d2 - d1).toBe(1);
+  });
+
+  it('flips parity every day, including across the year boundary (unlike day-of-year)', () => {
+    // Dec 31 -> Jan 1: day-of-year jumps 365 -> 1 (both odd, parity stutters);
+    // the epoch day number keeps incrementing, so parity keeps alternating.
+    const dec31 = dayNumberIn(new Date('2025-12-31T12:00:00Z'), 'UTC');
+    const jan01 = dayNumberIn(new Date('2026-01-01T12:00:00Z'), 'UTC');
+    expect(jan01 - dec31).toBe(1);
+    expect(dec31 % 2).not.toBe(jan01 % 2);
+  });
+
+  it('uses the given timezone, not the host clock', () => {
+    // 23:30 UTC on Jan 1 is already Jan 2 in Cairo (UTC+2): one day later there.
+    const instant = new Date('2026-01-01T23:30:00Z');
+    expect(dayNumberIn(instant, 'Africa/Cairo') - dayNumberIn(instant, 'UTC')).toBe(1);
+  });
+
+  it('is a stable absolute count (1970-01-01 UTC is day 0)', () => {
+    expect(dayNumberIn(new Date('1970-01-01T00:00:00Z'), 'UTC')).toBe(0);
+    expect(dayNumberIn(new Date('1970-01-02T00:00:00Z'), 'UTC')).toBe(1);
   });
 });
 

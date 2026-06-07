@@ -18,24 +18,42 @@ export function pickContent(content: string | readonly string[]): string | null 
 }
 
 /**
- * Day-of-year (1..366) for a Date in a given IANA timezone, computed by
- * formatting the date in that timezone (so "today" means today in the bot's
- * timezone, not on the host clock). Pure: no global Date mutation.
+ * A date's calendar year/month/day AS SEEN in a given IANA timezone (so
+ * "today" means today in the bot's timezone, not on the host clock). Pure: no
+ * global Date mutation. Shared by dayOfYearIn / dayNumberIn.
  */
-export function dayOfYearIn(date: Date, timezone: string): number {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
+function ymdInTz(date: Date, timezone: string): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
-  const parts = fmt.formatToParts(date);
-  const year = Number(parts.find((p) => p.type === 'year')?.value);
-  const month = Number(parts.find((p) => p.type === 'month')?.value);
-  const day = Number(parts.find((p) => p.type === 'day')?.value);
+  }).formatToParts(date);
+  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { year: part('year'), month: part('month'), day: part('day') };
+}
+
+/**
+ * Day-of-year (1..366) for a Date in a given IANA timezone. Resets to 1 each
+ * January 1 — use this for rotation that should line up with the calendar year.
+ */
+export function dayOfYearIn(date: Date, timezone: string): number {
+  const { year, month, day } = ymdInTz(date, timezone);
   const startOfYear = Date.UTC(year, 0, 1);
   const thisDay = Date.UTC(year, month - 1, day);
   return Math.round((thisDay - startOfYear) / 86_400_000) + 1;
+}
+
+/**
+ * Whole day number for a Date in a given IANA timezone, counting days since the
+ * Unix epoch (1970-01-01). Unlike dayOfYearIn it does NOT reset each year, so
+ * its parity (even/odd) flips on every real calendar day with no stutter at the
+ * year boundary. Handy for day-by-day alternation (e.g. show A on even days, B
+ * on odd) or any cadence keyed to an unbroken day count. Pure.
+ */
+export function dayNumberIn(date: Date, timezone: string): number {
+  const { year, month, day } = ymdInTz(date, timezone);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
 /**
@@ -48,6 +66,14 @@ export function dayOfYearIn(date: Date, timezone: string): number {
  *
  * Useful for a daily reminder so a follower never sees yesterday's tip again
  * today.
+ *
+ * CADENCE CAVEAT: the "no consecutive repeat / whole pool before a repeat"
+ * guarantee assumes a DAILY fire (the day-of-year step is 1). On a coarser
+ * schedule the step is larger, so the pool size must be coprime with that step
+ * or some entries never show. The classic trap: a WEEKLY cron steps by 7, so a
+ * pool whose size is a multiple of 7 freezes on a single entry forever — size a
+ * weekly pool to avoid multiples of 7. For day-by-day alternation between two
+ * sources, prefer dayNumberIn parity over this helper.
  */
 export function pickForDay(
   content: string | readonly string[],

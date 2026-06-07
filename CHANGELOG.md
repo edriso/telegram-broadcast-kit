@@ -4,6 +4,23 @@ Notable changes to telegram-broadcast-kit. A consuming bot pins a tag, e.g.
 `github:edriso/telegram-broadcast-kit#v0.1.0`, so each entry below is a tag a bot
 can move to.
 
+## v0.2.3
+
+- **New `dayNumberIn(date, timezone)` in `pick`.** A tz-aware whole day count
+  since the Unix epoch (sibling of `dayOfYearIn`). Unlike day-of-year it never
+  resets, so its parity flips on every real day with no year-boundary stutter —
+  the clean primitive for day-by-day alternation between two content sources
+  (aamin's bedtime ritual alternates a fixed card with a rotating pool this way).
+- **Docs: `pickForDay` cadence caveat.** Documented that the "no consecutive
+  repeat / full coverage" guarantee assumes a daily fire; on a weekly cron the
+  step is 7, so a pool size that is a multiple of 7 freezes on one entry. No
+  behavior change.
+- **Docs: `PollSpec.options`** now correctly says 2..12 (Bot API 9.1+ raised the
+  max from 10 to 12).
+- **Cleanup: `startHealthServer`** drops a dead `try/catch` around `listen()` —
+  bind failures arrive on the `'error'` event, not as a synchronous throw, which
+  the existing handler already covers. No behavior change.
+
 ## v0.2.2
 
 - **Poll text direction is selectable.** New optional `direction?: 'rtl' |

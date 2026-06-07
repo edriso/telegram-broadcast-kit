@@ -110,8 +110,8 @@ export const MAX_CLOSE_HOURS = 2_628_000 / 3600; // ~30.4 days
 export interface PollSpec {
   /** Telegram allows ≤300 chars. */
   question: string;
-  /** 2..10 options, each ≤100 chars. Mapped to the InputPollOption objects Bot
-   *  API 7.3+ expects. */
+  /** 2..12 options (Bot API 9.1+ raised the max from 10 to 12), each ≤100
+   *  chars. Mapped to the InputPollOption objects Bot API 7.3+ expects. */
   options: readonly string[];
   /** Anonymous by default — nobody (not even the bot) sees who voted, only
    *  aggregate percentages. */
